@@ -1,0 +1,42 @@
+[package]
+name = "cmd-api"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+# Internal
+cmd-core = { path = "../core" }
+cmd-storage = { path = "../storage" }
+cmd-hdc = { path = "../hdc" }
+cmd-resolver = { path = "../resolver" }
+
+# Web framework
+axum = "0.7"
+tower = "0.5"
+tower-http = { version = "0.6", features = ["cors", "trace"] }
+
+# Async
+tokio = { workspace = true }
+async-trait = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Python bindings
+pyo3 = { workspace = true, optional = true }
+
+# Utils
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow = { workspace = true }
+
+[features]
+python = ["pyo3"]
+
+[dev-dependencies]
+hyper = "1.5"
+rstest = { workspace = true }

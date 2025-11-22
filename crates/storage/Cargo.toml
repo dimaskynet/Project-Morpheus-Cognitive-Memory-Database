@@ -1,0 +1,33 @@
+[package]
+name = "cmd-storage"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+cmd-core = { path = "../core" }
+
+# Storage
+lancedb = { workspace = true }
+arrow = { workspace = true }
+parquet = { workspace = true }
+kuzu = { workspace = true }
+
+# Async
+tokio = { workspace = true }
+async-trait = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Utils
+tracing = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3.10"
+rstest = { workspace = true }

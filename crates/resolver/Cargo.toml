@@ -1,0 +1,30 @@
+[package]
+name = "cmd-resolver"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+# Internal
+cmd-core = { path = "../core" }
+
+# CRDT
+crdts = { workspace = true }
+
+# Async
+tokio = { workspace = true }
+async-trait = { workspace = true }
+
+# Utils
+serde = { workspace = true }
+tracing = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+chrono = { version = "0.4", features = ["serde"] }
+
+[dev-dependencies]
+rstest = { workspace = true }
+proptest = { workspace = true }
+tokio-test = "0.4"

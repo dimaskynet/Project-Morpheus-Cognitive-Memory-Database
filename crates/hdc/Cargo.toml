@@ -1,0 +1,25 @@
+[package]
+name = "cmd-hdc"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+# Core
+cmd-core = { path = "../core" }
+
+# HDC operations
+bitvec = { workspace = true }
+packed_simd_2 = { workspace = true }
+ndarray = { workspace = true }
+
+# Utils
+rand = "0.8"
+rayon = { workspace = true }
+serde = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }
+proptest = { workspace = true }
