@@ -9,11 +9,11 @@ repository.workspace = true
 [dependencies]
 cmd-core = { path = "../core" }
 
-# Storage
-lancedb = { workspace = true }
-arrow = { workspace = true }
-parquet = { workspace = true }
-kuzu = { workspace = true }
+# Storage (optional features)
+lancedb = { workspace = true, optional = true }
+arrow = { workspace = true, optional = true }
+parquet = { workspace = true, optional = true }
+kuzu = { workspace = true, optional = true }
 
 # Async
 tokio = { workspace = true }
@@ -27,6 +27,14 @@ serde_json = { workspace = true }
 tracing = { workspace = true }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
+parking_lot = { workspace = true }
+chrono = { version = "0.4", features = ["serde"] }
+
+[features]
+default = []
+lancedb = ["dep:lancedb", "dep:arrow", "dep:parquet"]
+kuzu = ["dep:kuzu"]
+full = ["lancedb", "kuzu"]
 
 [dev-dependencies]
 tempfile = "3.10"

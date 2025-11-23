@@ -54,12 +54,22 @@ Cognitive Memory Database (CMD) is a revolutionary approach to AGI memory that c
 - **Cache optimization**: DashMap-based similarity caching
 - **Tests**: 5/5 passing ✅
 
+#### Storage Module (`cmd-storage`) - v0.1.0
+- **Modular architecture**: Trait-based design for episodic and semantic storage
+- **Episodic storage**: LanceDB/Parquet for vector search (optional feature)
+- **Semantic storage**: KuzuDB for graph relationships (optional feature)
+- **In-memory storage**: HashMap-based implementation for testing
+- **Async operations**: Full async/await support with tokio
+- **Vector search**: Cosine similarity and HDC Hamming distance
+- **Graph queries**: Neighbor traversal with depth and relationship filtering
+- **Tests**: 8/8 passing ✅
+
 ### 🚧 In Development
 
-#### Storage Module (`cmd-storage`)
-- LanceDB integration for vector storage (requires protobuf-compiler)
-- KuzuDB integration for graph database
-- Hybrid query optimization
+#### Memory Manager
+- Unified interface combining storage, search, and resolver
+- Lifecycle management (add, update, search, consolidate)
+- Background consolidation and forgetting processes
 
 ### 📝 Planned
 
@@ -142,6 +152,17 @@ for result in results {
              result.similarity, result.retention_score);
 }
 
+// Storage layer (async)
+use cmd_storage::memory::{InMemoryEpisodicStorage, InMemorySemanticStorage};
+use cmd_storage::EpisodicStorage;
+
+let mut storage = InMemoryEpisodicStorage::new();
+storage.store(memory).await?;
+
+// Vector search
+let query_vec = vec![0.1, 0.2, 0.3];
+let similar = storage.search_vector(&query_vec, 5, None).await?;
+
 // Resolve conflicts deterministically
 let mut resolver = DeterministicResolver::new();
 let result = resolver.resolve(conflict)?;
@@ -192,7 +213,7 @@ results = await cmd.retrieve(
 
 ```bash
 # Run all tests
-cargo test --package cmd-core --package cmd-resolver --package cmd-hdc --package cmd-search
+cargo test --package cmd-core --package cmd-resolver --package cmd-hdc --package cmd-search --package cmd-storage
 
 # Run HDC benchmarks (requires nightly)
 cargo +nightly bench --package cmd-hdc
@@ -202,6 +223,9 @@ cargo test --package cmd-hdc operations
 
 # Run with output
 cargo test -- --nocapture
+
+# Build with optional storage features
+cargo build --package cmd-storage --features full  # Requires protoc and kuzu
 ```
 
 ### Test Coverage
@@ -210,7 +234,8 @@ cargo test -- --nocapture
 - **cmd-resolver**: 8 tests covering conflict resolution and trust management
 - **cmd-hdc**: 26 tests covering vectors, operations, encoders, similarity, and SIMD
 - **cmd-search**: 5 tests covering HDC-based indexing and search modes
-- **Total**: 50 tests, 100% passing ✅
+- **cmd-storage**: 8 tests covering episodic storage, semantic graphs, and vector search
+- **Total**: 58 tests, 100% passing ✅
 
 ## Documentation
 
@@ -247,9 +272,11 @@ This project builds upon research in:
 - [x] Hyperdimensional computing (HDC) with SIMD
 - [x] HDC-based search and indexing
 - [x] Performance benchmarking suite
-- [ ] Vector storage integration (LanceDB)
-- [ ] Graph database integration (KuzuDB)
-- [ ] Persistent storage layer
+- [x] Storage layer architecture (episodic + semantic)
+- [x] In-memory storage implementation
+- [ ] Vector storage integration (LanceDB) - optional feature
+- [ ] Graph database integration (KuzuDB) - optional feature
+- [ ] Memory manager (unified interface)
 - [ ] REST API server
 - [ ] Python SDK
 - [ ] Memory consolidation engine
