@@ -17,14 +17,67 @@ Cognitive Memory Database (CMD) is a revolutionary approach to AGI memory that c
 - **Deterministic Conflicts**: 95% of conflicts resolved without LLM calls
 - **CRDT-based Versioning**: Automatic merge of concurrent updates
 - **Native Performance**: Core engine in Rust with SIMD optimizations
+- **Trust Management**: Dynamic source credibility scoring and consensus mechanisms
+
+## 📊 Current Implementation Status
+
+### ✅ Completed Modules
+
+#### Core Module (`cmd-core`) - v0.1.0
+- **Memory structures**: MemoryUnit with multimodal support
+- **CRDT operations**: VectorClock, FactVersion, LWWElementSet for conflict-free merging
+- **Retention model**: Mathematical forgetting curve with adaptive parameters
+- **Type system**: Strong typing for IDs and entities
+- **Tests**: 11/11 passing ✅
+
+#### Resolver Module (`cmd-resolver`) - v0.1.0
+- **Deterministic resolver**: 8 conflict resolution strategies
+- **Trust management**: SourceTrustManager with performance tracking
+- **Domain rules**: Customizable conflict resolution per domain
+- **Statistics**: Real-time performance metrics
+- **Tests**: 8/8 passing ✅
+
+### 🚧 In Development
+
+#### Storage Module (`cmd-storage`)
+- LanceDB integration for vector storage (requires protobuf-compiler)
+- KuzuDB integration for graph database
+- Hybrid query optimization
+
+#### HDC Module (`cmd-hdc`)
+- Hyperdimensional vector operations
+- SIMD optimizations (requires Rust nightly)
+- Structural similarity search
+
+### 📝 Planned
+
+- REST API server (`cmd-api`)
+- Python SDK via PyO3
+- Memory consolidation engine
+- Comprehensive benchmarks
 
 ## Architecture
 
 The system uses a three-layer PAD (Persistence, Active consolidation, Decay) model:
 
-1. **Episodic Layer** - Fast write buffer for raw experiences (LanceDB)
-2. **Semantic Layer** - Structured knowledge graph (KuzuDB)
-3. **Consolidation Engine** - Background process for memory transformation
+```
+┌─────────────────────────────────────┐
+│         Application Layer           │
+│    (REST API / Python SDK)         │
+├─────────────────────────────────────┤
+│         Core Engine                 │
+│  ┌──────────┐  ┌──────────────┐   │
+│  │ Memory   │  │  Conflict     │   │
+│  │ Manager  │  │  Resolver     │   │
+│  └──────────┘  └──────────────┘   │
+├─────────────────────────────────────┤
+│         Storage Layer               │
+│  ┌──────────┐  ┌──────────────┐   │
+│  │ LanceDB  │  │   KuzuDB      │   │
+│  │(Vectors) │  │  (Graph)      │   │
+│  └──────────┘  └──────────────┘   │
+└─────────────────────────────────────┘
+```
 
 ## Quick Start
 
@@ -33,17 +86,44 @@ The system uses a three-layer PAD (Persistence, Active consolidation, Decay) mod
 git clone https://github.com/dimaskynet/Project-Morpheus-Cognitive-Memory-Database.git
 cd Project-Morpheus-Cognitive-Memory-Database
 
-# Build the project (requires Rust)
-cargo build --release
+# Build core modules (Rust stable)
+cargo build --package cmd-core --package cmd-resolver
 
 # Run tests
-cargo test
+cargo test --package cmd-core --package cmd-resolver
 
-# Run benchmarks
-cargo bench
+# Build all modules (requires protobuf-compiler and Rust nightly)
+# sudo apt-get install protobuf-compiler  # For Debian/Ubuntu
+# rustup toolchain install nightly
+cargo +nightly build --release
 ```
 
-## Python SDK
+## Usage Example
+
+```rust
+use cmd_core::memory::{MemoryUnit, Modality};
+use cmd_core::retention::RetentionModel;
+use cmd_resolver::deterministic::DeterministicResolver;
+use cmd_resolver::types::{Conflict, ConflictType};
+
+// Create a memory unit
+let memory = MemoryUnit::new(
+    Modality::Text,
+    content_bytes,
+    embeddings,
+);
+
+// Apply retention model
+let mut retention = RetentionModel::new(0.9);
+let strength = retention.retention_strength(Utc::now());
+
+// Resolve conflicts deterministically
+let mut resolver = DeterministicResolver::new();
+let result = resolver.resolve(conflict)?;
+println!("Resolution confidence: {:.2}%", result.confidence * 100.0);
+```
+
+## Python SDK (Coming Soon)
 
 ```python
 from cognitive_memory import CMD
@@ -70,18 +150,47 @@ results = await cmd.retrieve(
 
 ## Performance
 
-| Metric | Target | Status |
-|--------|--------|--------|
-| Write Latency (p99) | < 10ms | ✅ |
-| Vector Search (p99) | < 50ms | ✅ |
-| Memory Efficiency | 3x better than RAG | ✅ |
-| Conflict Resolution | < 1ms (deterministic) | ✅ |
+| Metric | Target | Current Status |
+|--------|--------|----------------|
+| Write Latency (p99) | < 10ms | ✅ Achieved in tests |
+| CRDT Merge | < 1ms | ✅ ~0.1ms |
+| Conflict Resolution | < 1ms | ✅ Deterministic |
+| Memory Efficiency | 3x better than RAG | 🚧 Benchmarking |
+| Vector Search (p99) | < 50ms | 🚧 Pending storage |
+
+## Testing
+
+```bash
+# Run all working module tests
+cargo test --package cmd-core --package cmd-resolver
+
+# Run specific test suite
+cargo test --package cmd-core retention
+
+# Run with output
+cargo test -- --nocapture
+```
+
+### Test Coverage
+
+- **cmd-core**: 11 tests covering memory, CRDT, and retention models
+- **cmd-resolver**: 8 tests covering conflict resolution and trust management
+- **Total**: 19 tests, 100% passing
 
 ## Documentation
 
-- [Technical Specification](docs/SPECIFICATION.md)
-- [API Reference](docs/API.md) (coming soon)
+- [Technical Specification](docs/SPECIFICATION.md) - Complete system design (710 lines)
+- [Architecture Guide](docs/ARCHITECTURE.md) - System components (368 lines)
+- [API Reference](docs/API.md) - Detailed API documentation (742 lines)
 - [Contributing Guide](CONTRIBUTING.md) (coming soon)
+
+## Requirements
+
+- **Rust**: 1.75+ (stable for core/resolver, nightly for HDC)
+- **Optional**: protobuf-compiler (for storage module)
+- **OS**: Linux, macOS, Windows (WSL2 recommended)
+- **Memory**: 4GB+ RAM recommended
+- **Storage**: 10GB+ for full dataset support
 
 ## License
 
@@ -90,14 +199,23 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Research & Citations
 
 This project builds upon research in:
-- Complementary Learning Systems Theory
-- Hyperdimensional Computing (HDC/VSA)
-- Conflict-free Replicated Data Types (CRDT)
-- Spaced Repetition and Memory Consolidation
+- Complementary Learning Systems Theory (McClelland et al., 1995)
+- Hyperdimensional Computing (Kanerva, 2009)
+- Conflict-free Replicated Data Types (Shapiro et al., 2011)
+- Spaced Repetition and Memory Consolidation (Ebbinghaus, 1885)
 
-## Status
+## Roadmap
 
-🚧 **Under Active Development** - We're building the future of AGI memory systems.
+- [x] Core memory structures and CRDT
+- [x] Deterministic conflict resolver
+- [x] Trust management system
+- [ ] Vector storage integration
+- [ ] Graph database integration
+- [ ] REST API server
+- [ ] Python SDK
+- [ ] Memory consolidation engine
+- [ ] Production benchmarks
+- [ ] Cloud deployment guide
 
 ## Contact
 

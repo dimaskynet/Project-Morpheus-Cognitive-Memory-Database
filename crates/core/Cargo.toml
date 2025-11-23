@@ -22,7 +22,7 @@ rkyv = { workspace = true }
 
 # Math & Time
 chrono = { version = "0.4", features = ["serde"] }
-uuid = { version = "1.11", features = ["v4", "v7", "serde"] }
+uuid = { version = "1.18", features = ["v4", "v7", "serde"] }
 
 # Collections
 dashmap = { workspace = true }
