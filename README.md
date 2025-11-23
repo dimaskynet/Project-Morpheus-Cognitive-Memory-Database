@@ -64,12 +64,22 @@ Cognitive Memory Database (CMD) is a revolutionary approach to AGI memory that c
 - **Graph queries**: Neighbor traversal with depth and relationship filtering
 - **Tests**: 8/8 passing ✅
 
+#### Memory Manager (`cmd-manager`) - v0.1.0
+- **Unified interface**: Integrates storage, search, and conflict resolution
+- **Lifecycle management**: Add, retrieve, update, delete, search operations
+- **Auto HDC encoding**: Automatic hyperdimensional vector encoding for text
+- **Forgetting process**: Removes weak memories below retention threshold
+- **Consolidation engine**: 4 strategies (access frequency, retention, clustering, temporal)
+- **Statistics tracking**: Real-time metrics for operations and performance
+- **Configurable**: Builder pattern for fine-grained control
+- **Tests**: 12/12 passing ✅
+
 ### 🚧 In Development
 
-#### Memory Manager
-- Unified interface combining storage, search, and resolver
-- Lifecycle management (add, update, search, consolidate)
-- Background consolidation and forgetting processes
+#### Background Processes
+- Automatic consolidation scheduler
+- Periodic forgetting process
+- Memory migration and archival
 
 ### 📝 Planned
 
@@ -152,21 +162,31 @@ for result in results {
              result.similarity, result.retention_score);
 }
 
-// Storage layer (async)
+// Memory Manager - unified interface (async)
+use cmd_manager::{MemoryManager, ManagerConfig};
 use cmd_storage::memory::{InMemoryEpisodicStorage, InMemorySemanticStorage};
-use cmd_storage::EpisodicStorage;
 
-let mut storage = InMemoryEpisodicStorage::new();
-storage.store(memory).await?;
+let episodic = InMemoryEpisodicStorage::new();
+let semantic = InMemorySemanticStorage::new();
+let config = ManagerConfig::default()
+    .with_forgetting_threshold(0.3)
+    .with_auto_hdc_encoding(true);
 
-// Vector search
-let query_vec = vec![0.1, 0.2, 0.3];
-let similar = storage.search_vector(&query_vec, 5, None).await?;
+let manager = MemoryManager::new(episodic, semantic, config);
 
-// Resolve conflicts deterministically
-let mut resolver = DeterministicResolver::new();
-let result = resolver.resolve(conflict)?;
-println!("Resolution confidence: {:.2}%", result.confidence * 100.0);
+// Add memories with automatic HDC encoding
+let memory_id = manager.add_memory(memory).await?;
+
+// Search with HDC similarity
+let results = manager.search("user preferences", 10).await?;
+
+// Get statistics
+let stats = manager.get_stats();
+println!("Total memories: {}", stats.total_memories);
+println!("Total searches: {}", stats.total_searches);
+
+// Run forgetting process
+let forgotten = manager.forget_weak_memories(0.3).await?;
 ```
 
 ## Python SDK (Coming Soon)
@@ -213,7 +233,7 @@ results = await cmd.retrieve(
 
 ```bash
 # Run all tests
-cargo test --package cmd-core --package cmd-resolver --package cmd-hdc --package cmd-search --package cmd-storage
+cargo test --package cmd-core --package cmd-resolver --package cmd-hdc --package cmd-search --package cmd-storage --package cmd-manager
 
 # Run HDC benchmarks (requires nightly)
 cargo +nightly bench --package cmd-hdc
@@ -235,7 +255,8 @@ cargo build --package cmd-storage --features full  # Requires protoc and kuzu
 - **cmd-hdc**: 26 tests covering vectors, operations, encoders, similarity, and SIMD
 - **cmd-search**: 5 tests covering HDC-based indexing and search modes
 - **cmd-storage**: 8 tests covering episodic storage, semantic graphs, and vector search
-- **Total**: 58 tests, 100% passing ✅
+- **cmd-manager**: 12 tests covering memory lifecycle, search, consolidation, and statistics
+- **Total**: 70 tests, 100% passing ✅
 
 ## Documentation
 
@@ -274,12 +295,14 @@ This project builds upon research in:
 - [x] Performance benchmarking suite
 - [x] Storage layer architecture (episodic + semantic)
 - [x] In-memory storage implementation
+- [x] Memory manager (unified interface)
+- [x] Consolidation engine (4 strategies)
+- [x] Forgetting process
 - [ ] Vector storage integration (LanceDB) - optional feature
 - [ ] Graph database integration (KuzuDB) - optional feature
-- [ ] Memory manager (unified interface)
+- [ ] Background consolidation scheduler
 - [ ] REST API server
 - [ ] Python SDK
-- [ ] Memory consolidation engine
 - [ ] End-to-end benchmarks
 - [ ] Cloud deployment guide
 
