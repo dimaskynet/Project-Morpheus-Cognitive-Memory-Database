@@ -12,7 +12,6 @@ cmd-core = { path = "../core" }
 
 # HDC operations
 bitvec = { workspace = true }
-packed_simd_2 = { workspace = true }
 ndarray = { workspace = true }
 
 # Utils
@@ -23,3 +22,7 @@ serde = { workspace = true }
 [dev-dependencies]
 criterion = { workspace = true }
 proptest = { workspace = true }
+
+[[bench]]
+name = "hdc_bench"
+harness = false

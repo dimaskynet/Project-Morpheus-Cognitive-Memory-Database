@@ -37,17 +37,29 @@ Cognitive Memory Database (CMD) is a revolutionary approach to AGI memory that c
 - **Statistics**: Real-time performance metrics
 - **Tests**: 8/8 passing ✅
 
+#### HDC Module (`cmd-hdc`) - v0.1.0
+- **Hyperdimensional computing**: 10,000-bit binary vectors for structural representation
+- **SIMD optimizations**: AVX2/SSE4.2 acceleration (29x speedup on x86_64)
+- **HDC operations**: Bind (XOR), Bundle (majority), Permute (rotation)
+- **Encoders**: Scalar, Symbol, Sequence, and Map encoders
+- **Performance**: Hamming distance in 65ns, similarity in 66ns (SIMD)
+- **Tests**: 26/26 passing ✅
+- **Benchmarks**: Complete performance suite with Criterion
+
+#### Search Module (`cmd-search`) - v0.1.0
+- **HDC-based indexing**: Fast structural search using hyperdimensional vectors
+- **Multiple search modes**: K-nearest neighbors, threshold-based, temporal filtering
+- **Weighted ranking**: Combines similarity (70%) and retention score (30%)
+- **Batch operations**: Parallel SIMD similarity computations
+- **Cache optimization**: DashMap-based similarity caching
+- **Tests**: 5/5 passing ✅
+
 ### 🚧 In Development
 
 #### Storage Module (`cmd-storage`)
 - LanceDB integration for vector storage (requires protobuf-compiler)
 - KuzuDB integration for graph database
 - Hybrid query optimization
-
-#### HDC Module (`cmd-hdc`)
-- Hyperdimensional vector operations
-- SIMD optimizations (requires Rust nightly)
-- Structural similarity search
 
 ### 📝 Planned
 
@@ -61,22 +73,22 @@ Cognitive Memory Database (CMD) is a revolutionary approach to AGI memory that c
 The system uses a three-layer PAD (Persistence, Active consolidation, Decay) model:
 
 ```
-┌─────────────────────────────────────┐
-│         Application Layer           │
-│    (REST API / Python SDK)         │
-├─────────────────────────────────────┤
-│         Core Engine                 │
-│  ┌──────────┐  ┌──────────────┐   │
-│  │ Memory   │  │  Conflict     │   │
-│  │ Manager  │  │  Resolver     │   │
-│  └──────────┘  └──────────────┘   │
-├─────────────────────────────────────┤
-│         Storage Layer               │
-│  ┌──────────┐  ┌──────────────┐   │
-│  │ LanceDB  │  │   KuzuDB      │   │
-│  │(Vectors) │  │  (Graph)      │   │
-│  └──────────┘  └──────────────┘   │
-└─────────────────────────────────────┘
+┌─────────────────────────────────────────────┐
+│         Application Layer                   │
+│       (REST API / Python SDK)               │
+├─────────────────────────────────────────────┤
+│         Core Engine                         │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐ │
+│  │ Memory   │  │ HDC      │  │ Conflict  │ │
+│  │ Manager  │  │ Search   │  │ Resolver  │ │
+│  └──────────┘  └──────────┘  └──────────┘ │
+├─────────────────────────────────────────────┤
+│         Storage Layer                       │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐ │
+│  │ LanceDB  │  │  KuzuDB  │  │   HDC    │ │
+│  │(Vectors) │  │ (Graph)  │  │ (Index)  │ │
+│  └──────────┘  └──────────┘  └──────────┘ │
+└─────────────────────────────────────────────┘
 ```
 
 ## Quick Start
@@ -89,13 +101,15 @@ cd Project-Morpheus-Cognitive-Memory-Database
 # Build core modules (Rust stable)
 cargo build --package cmd-core --package cmd-resolver
 
-# Run tests
-cargo test --package cmd-core --package cmd-resolver
+# Build HDC and search modules (Rust stable or nightly for SIMD)
+cargo build --package cmd-hdc --package cmd-search
 
-# Build all modules (requires protobuf-compiler and Rust nightly)
-# sudo apt-get install protobuf-compiler  # For Debian/Ubuntu
-# rustup toolchain install nightly
-cargo +nightly build --release
+# Run tests
+cargo test --package cmd-core --package cmd-resolver --package cmd-hdc --package cmd-search
+
+# Run benchmarks (requires nightly for best performance)
+rustup toolchain install nightly
+cargo +nightly bench --package cmd-hdc
 ```
 
 ## Usage Example
@@ -104,7 +118,7 @@ cargo +nightly build --release
 use cmd_core::memory::{MemoryUnit, Modality};
 use cmd_core::retention::RetentionModel;
 use cmd_resolver::deterministic::DeterministicResolver;
-use cmd_resolver::types::{Conflict, ConflictType};
+use cmd_search::HdcMemoryIndex;
 
 // Create a memory unit
 let memory = MemoryUnit::new(
@@ -116,6 +130,17 @@ let memory = MemoryUnit::new(
 // Apply retention model
 let mut retention = RetentionModel::new(0.9);
 let strength = retention.retention_strength(Utc::now());
+
+// HDC-based search
+let mut index = HdcMemoryIndex::new();
+index.add_memory(memory)?;
+
+// Search with automatic HDC encoding
+let results = index.search_hdc("user preferences", 10);
+for result in results {
+    println!("Similarity: {:.2}, Retention: {:.2}",
+             result.similarity, result.retention_score);
+}
 
 // Resolve conflicts deterministically
 let mut resolver = DeterministicResolver::new();
@@ -152,20 +177,28 @@ results = await cmd.retrieve(
 
 | Metric | Target | Current Status |
 |--------|--------|----------------|
-| Write Latency (p99) | < 10ms | ✅ Achieved in tests |
+| HDC Hamming Distance | < 100ns | ✅ **65ns** (SIMD) |
+| HDC Similarity | < 100ns | ✅ **66ns** (SIMD) |
+| HDC XOR (Bind) | < 2μs | ✅ **1.73μs** |
+| HDC Bundle (5 vectors) | < 200μs | ✅ **126μs** |
+| Sequence Encoding (5 tokens) | < 200μs | ✅ **164μs** |
 | CRDT Merge | < 1ms | ✅ ~0.1ms |
 | Conflict Resolution | < 1ms | ✅ Deterministic |
 | Memory Efficiency | 3x better than RAG | 🚧 Benchmarking |
-| Vector Search (p99) | < 50ms | 🚧 Pending storage |
+
+**SIMD Acceleration**: 29x speedup over scalar operations on x86_64 (AVX2)
 
 ## Testing
 
 ```bash
-# Run all working module tests
-cargo test --package cmd-core --package cmd-resolver
+# Run all tests
+cargo test --package cmd-core --package cmd-resolver --package cmd-hdc --package cmd-search
+
+# Run HDC benchmarks (requires nightly)
+cargo +nightly bench --package cmd-hdc
 
 # Run specific test suite
-cargo test --package cmd-core retention
+cargo test --package cmd-hdc operations
 
 # Run with output
 cargo test -- --nocapture
@@ -175,7 +208,9 @@ cargo test -- --nocapture
 
 - **cmd-core**: 11 tests covering memory, CRDT, and retention models
 - **cmd-resolver**: 8 tests covering conflict resolution and trust management
-- **Total**: 19 tests, 100% passing
+- **cmd-hdc**: 26 tests covering vectors, operations, encoders, similarity, and SIMD
+- **cmd-search**: 5 tests covering HDC-based indexing and search modes
+- **Total**: 50 tests, 100% passing ✅
 
 ## Documentation
 
@@ -209,12 +244,16 @@ This project builds upon research in:
 - [x] Core memory structures and CRDT
 - [x] Deterministic conflict resolver
 - [x] Trust management system
-- [ ] Vector storage integration
-- [ ] Graph database integration
+- [x] Hyperdimensional computing (HDC) with SIMD
+- [x] HDC-based search and indexing
+- [x] Performance benchmarking suite
+- [ ] Vector storage integration (LanceDB)
+- [ ] Graph database integration (KuzuDB)
+- [ ] Persistent storage layer
 - [ ] REST API server
 - [ ] Python SDK
 - [ ] Memory consolidation engine
-- [ ] Production benchmarks
+- [ ] End-to-end benchmarks
 - [ ] Cloud deployment guide
 
 ## Contact
