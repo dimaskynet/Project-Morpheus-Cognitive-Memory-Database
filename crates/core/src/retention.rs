@@ -88,7 +88,7 @@ mod tests {
 
     #[test]
     fn test_retention_decay() {
-        let mut model = RetentionModel::new(1.0);
+        let model = RetentionModel::new(1.0);
         let now = model.last_recall;
 
         // Initial strength should be close to base retention

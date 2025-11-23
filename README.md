@@ -27,8 +27,10 @@ Cognitive Memory Database (CMD) is a revolutionary approach to AGI memory that c
 - **Memory structures**: MemoryUnit with multimodal support
 - **CRDT operations**: VectorClock, FactVersion, LWWElementSet for conflict-free merging
 - **Retention model**: Mathematical forgetting curve with adaptive parameters
+- **Emotional memory**: PAD model (Pleasure-Arousal-Dominance) for affective context
+- **Prospective memory**: Goals and intentions with trigger conditions
 - **Type system**: Strong typing for IDs and entities
-- **Tests**: 11/11 passing ✅
+- **Tests**: 26/26 passing ✅
 
 #### Resolver Module (`cmd-resolver`) - v0.1.0
 - **Deterministic resolver**: 8 conflict resolution strategies
@@ -70,9 +72,11 @@ Cognitive Memory Database (CMD) is a revolutionary approach to AGI memory that c
 - **Auto HDC encoding**: Automatic hyperdimensional vector encoding for text
 - **Forgetting process**: Removes weak memories below retention threshold
 - **Consolidation engine**: 4 strategies (access frequency, retention, clustering, temporal)
-- **Statistics tracking**: Real-time metrics for operations and performance
+- **Emotional operations**: Search by emotional valence, PAD similarity, and emotion updates
+- **Prospective memory**: Manage goals/intentions with trigger conditions and completion tracking
+- **Statistics tracking**: Real-time metrics for operations, performance, and emotional states
 - **Configurable**: Builder pattern for fine-grained control
-- **Tests**: 12/12 passing ✅
+- **Tests**: 21/21 passing ✅
 
 ### 🚧 In Development
 
@@ -187,6 +191,53 @@ println!("Total searches: {}", stats.total_searches);
 
 // Run forgetting process
 let forgotten = manager.forget_weak_memories(0.3).await?;
+
+// === Emotional Memory ===
+use cmd_core::memory::PADVector;
+
+// Create memory with emotional context
+let emotion = PADVector::new(0.7, 0.4, 0.3); // Happy (pleasure, arousal, dominance)
+let emotional_memory = MemoryUnit::new_text_with_emotion(
+    "User is excited about the project".to_string(),
+    source,
+    emotion,
+);
+manager.add_memory(emotional_memory).await?;
+
+// Search by emotional valence
+let positive_memories = manager.search_by_emotion(EmotionalValence::Positive, 10).await?;
+
+// Search by emotional similarity
+let target_emotion = PADVector::new(0.8, 0.5, 0.4);
+let similar = manager.search_by_emotional_similarity(target_emotion, 10, 0.5).await?;
+
+// Get emotional statistics
+let emotional_stats = manager.get_emotional_stats().await?;
+println!("Positive: {}, Negative: {}, Average intensity: {:.2}",
+         emotional_stats.positive_count,
+         emotional_stats.negative_count,
+         emotional_stats.average_intensity);
+
+// === Prospective Memory (Goals/Intentions) ===
+use cmd_core::memory::TriggerCondition;
+
+// Create a goal with trigger condition
+let goal = MemoryUnit::new_intention(
+    "Implement cognitive architecture".to_string(),
+    TriggerCondition::TimeBasedAt(deadline),
+    0.9, // high priority
+    source,
+);
+let goal_id = manager.add_memory(goal).await?;
+
+// Get active intentions
+let active_intentions = manager.get_active_intentions().await?;
+
+// Get intentions that should trigger now
+let triggerable = manager.get_triggerable_intentions().await?;
+
+// Complete an intention
+manager.complete_intention(&goal_id).await?;
 ```
 
 ## Python SDK (Coming Soon)
@@ -250,13 +301,13 @@ cargo build --package cmd-storage --features full  # Requires protoc and kuzu
 
 ### Test Coverage
 
-- **cmd-core**: 11 tests covering memory, CRDT, and retention models
+- **cmd-core**: 26 tests covering memory, CRDT, retention, emotional (PAD), and prospective memory
 - **cmd-resolver**: 8 tests covering conflict resolution and trust management
 - **cmd-hdc**: 26 tests covering vectors, operations, encoders, similarity, and SIMD
 - **cmd-search**: 5 tests covering HDC-based indexing and search modes
 - **cmd-storage**: 8 tests covering episodic storage, semantic graphs, and vector search
-- **cmd-manager**: 12 tests covering memory lifecycle, search, consolidation, and statistics
-- **Total**: 70 tests, 100% passing ✅
+- **cmd-manager**: 21 tests covering lifecycle, search, consolidation, emotional operations, and intentions
+- **Total**: 94 tests, 100% passing ✅
 
 ## Documentation
 
@@ -298,6 +349,9 @@ This project builds upon research in:
 - [x] Memory manager (unified interface)
 - [x] Consolidation engine (4 strategies)
 - [x] Forgetting process
+- [x] Emotional memory (PAD model)
+- [x] Prospective memory (goals/intentions)
+- [x] Emotional search and statistics
 - [ ] Vector storage integration (LanceDB) - optional feature
 - [ ] Graph database integration (KuzuDB) - optional feature
 - [ ] Background consolidation scheduler
