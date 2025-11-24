@@ -14,7 +14,7 @@ use cmd_resolver::types::{Conflict, ConflictType, ResolutionResult};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use std::sync::Arc;
-use parking_lot::RwLock;
+use tokio::sync::RwLock;
 use dashmap::DashMap;
 
 pub use config::ManagerConfig;
@@ -146,13 +146,13 @@ where
 
         // Store in episodic storage
         {
-            let mut storage = self.episodic_storage.write();
+            let mut storage = self.episodic_storage.write().await;
             storage.store(memory.clone()).await?;
         }
 
         // Add to search index
         {
-            let mut index = self.search_index.write();
+            let mut index = self.search_index.write().await;
             index.add_memory(memory.clone())
                 .map_err(|e| ManagerError::InvalidOperation(e))?;
         }
@@ -166,7 +166,7 @@ where
 
     /// Retrieve a memory by ID
     pub async fn get_memory(&self, id: &MemoryId) -> Result<MemoryUnit> {
-        let storage = self.episodic_storage.read();
+        let storage = self.episodic_storage.read().await;
         let mut memory = storage.retrieve(id).await?;
 
         // Record access
@@ -175,7 +175,7 @@ where
         // Update in storage
         drop(storage);
         {
-            let mut storage = self.episodic_storage.write();
+            let mut storage = self.episodic_storage.write().await;
             storage.update(memory.clone()).await?;
         }
 
@@ -186,7 +186,7 @@ where
     pub async fn search(&self, query: &str, k: usize) -> Result<Vec<SearchResult>> {
         self.increment_stat("total_searches");
 
-        let mut index = self.search_index.write();
+        let mut index = self.search_index.write().await;
         let results = index.search_hdc(query, k);
 
         Ok(results)
@@ -202,7 +202,7 @@ where
     ) -> Result<Vec<SearchResult>> {
         self.increment_stat("total_searches");
 
-        let mut index = self.search_index.write();
+        let mut index = self.search_index.write().await;
         let results = index.search_temporal(query, k, since, until);
 
         Ok(results)
@@ -212,13 +212,13 @@ where
     pub async fn delete_memory(&self, id: &MemoryId) -> Result<()> {
         // Remove from episodic storage
         {
-            let mut storage = self.episodic_storage.write();
+            let mut storage = self.episodic_storage.write().await;
             storage.delete(id).await?;
         }
 
         // Remove from search index
         {
-            let mut index = self.search_index.write();
+            let mut index = self.search_index.write().await;
             index.remove_memory(id)
                 .map_err(|e| ManagerError::InvalidOperation(e))?;
         }
@@ -229,14 +229,14 @@ where
 
     /// Run forgetting process - remove memories below retention threshold
     pub async fn forget_weak_memories(&self, threshold: f32) -> Result<u64> {
-        let storage = self.episodic_storage.read();
+        let storage = self.episodic_storage.read().await;
         let all_ids = storage.list_ids().await?;
         drop(storage);
 
         let mut forgotten_count = 0u64;
 
         for id in all_ids {
-            let storage = self.episodic_storage.read();
+            let storage = self.episodic_storage.read().await;
             if let Ok(memory) = storage.retrieve(&id).await {
                 if memory.should_forget(threshold) {
                     drop(storage);
@@ -272,14 +272,14 @@ where
     ) -> Result<Vec<MemoryUnit>> {
         self.increment_stat("total_searches");
 
-        let storage = self.episodic_storage.read();
+        let storage = self.episodic_storage.read().await;
         let all_ids = storage.list_ids().await?;
         drop(storage);
 
         let mut results = Vec::new();
 
         for id in all_ids {
-            let storage = self.episodic_storage.read();
+            let storage = self.episodic_storage.read().await;
             if let Ok(memory) = storage.retrieve(&id).await {
                 if memory.emotional_valence() == Some(valence) {
                     results.push(memory);
@@ -309,14 +309,14 @@ where
     ) -> Result<Vec<(MemoryUnit, f32)>> {
         self.increment_stat("total_searches");
 
-        let storage = self.episodic_storage.read();
+        let storage = self.episodic_storage.read().await;
         let all_ids = storage.list_ids().await?;
         drop(storage);
 
         let mut results: Vec<(MemoryUnit, f32)> = Vec::new();
 
         for id in all_ids {
-            let storage = self.episodic_storage.read();
+            let storage = self.episodic_storage.read().await;
             if let Ok(memory) = storage.retrieve(&id).await {
                 if let Some(ref emotional) = memory.emotional {
                     let distance = target_emotion.distance(&emotional.pad_vector);
@@ -341,14 +341,14 @@ where
 
     /// Get all active prospective memories (goals/intentions)
     pub async fn get_active_intentions(&self) -> Result<Vec<MemoryUnit>> {
-        let storage = self.episodic_storage.read();
+        let storage = self.episodic_storage.read().await;
         let all_ids = storage.list_ids().await?;
         drop(storage);
 
         let mut intentions = Vec::new();
 
         for id in all_ids {
-            let storage = self.episodic_storage.read();
+            let storage = self.episodic_storage.read().await;
             if let Ok(memory) = storage.retrieve(&id).await {
                 if memory.is_prospective() {
                     if let Some(ref intention) = memory.intention {
@@ -376,14 +376,14 @@ where
 
     /// Get intentions that should trigger now
     pub async fn get_triggerable_intentions(&self) -> Result<Vec<MemoryUnit>> {
-        let storage = self.episodic_storage.read();
+        let storage = self.episodic_storage.read().await;
         let all_ids = storage.list_ids().await?;
         drop(storage);
 
         let mut triggerable = Vec::new();
 
         for id in all_ids {
-            let storage = self.episodic_storage.read();
+            let storage = self.episodic_storage.read().await;
             if let Ok(memory) = storage.retrieve(&id).await {
                 if let Some(ref intention) = memory.intention {
                     if intention.should_trigger_now() {
@@ -407,14 +407,14 @@ where
 
     /// Complete a prospective memory (mark goal as completed)
     pub async fn complete_intention(&self, id: &MemoryId) -> Result<()> {
-        let storage = self.episodic_storage.read();
+        let storage = self.episodic_storage.read().await;
         let mut memory = storage.retrieve(id).await?;
         drop(storage);
 
         if let Some(ref mut intention) = memory.intention {
             intention.complete();
 
-            let mut storage = self.episodic_storage.write();
+            let mut storage = self.episodic_storage.write().await;
             storage.update(memory).await?;
 
             tracing::debug!("Completed intention: {}", id);
@@ -428,14 +428,14 @@ where
 
     /// Cancel a prospective memory
     pub async fn cancel_intention(&self, id: &MemoryId) -> Result<()> {
-        let storage = self.episodic_storage.read();
+        let storage = self.episodic_storage.read().await;
         let mut memory = storage.retrieve(id).await?;
         drop(storage);
 
         if let Some(ref mut intention) = memory.intention {
             intention.cancel();
 
-            let mut storage = self.episodic_storage.write();
+            let mut storage = self.episodic_storage.write().await;
             storage.update(memory).await?;
 
             tracing::debug!("Cancelled intention: {}", id);
@@ -449,13 +449,13 @@ where
 
     /// Update emotional state of a memory
     pub async fn update_emotion(&self, id: &MemoryId, emotion: PADVector) -> Result<()> {
-        let storage = self.episodic_storage.read();
+        let storage = self.episodic_storage.read().await;
         let mut memory = storage.retrieve(id).await?;
         drop(storage);
 
         memory.update_emotion(emotion);
 
-        let mut storage = self.episodic_storage.write();
+        let mut storage = self.episodic_storage.write().await;
         storage.update(memory).await?;
 
         tracing::debug!("Updated emotion for memory: {}", id);
@@ -464,7 +464,7 @@ where
 
     /// Get emotional statistics
     pub async fn get_emotional_stats(&self) -> Result<EmotionalStats> {
-        let storage = self.episodic_storage.read();
+        let storage = self.episodic_storage.read().await;
         let all_ids = storage.list_ids().await?;
         drop(storage);
 
@@ -475,7 +475,7 @@ where
         let mut emotion_count = 0u64;
 
         for id in all_ids {
-            let storage = self.episodic_storage.read();
+            let storage = self.episodic_storage.read().await;
             if let Ok(memory) = storage.retrieve(&id).await {
                 if let Some(ref emotional) = memory.emotional {
                     match emotional.valence {

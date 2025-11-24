@@ -251,7 +251,7 @@ impl Default for HdcMemoryIndex {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use cmd_core::memory::{Modality, Embeddings, TemporalMetadata, SourceMetadata, SourceType, GraphLink};
+    use cmd_core::memory::{Modality, Embeddings, TemporalMetadata, SourceMetadata, SourceType};
     use cmd_core::retention::RetentionModel;
     use cmd_core::types::SourceId;
 
@@ -281,6 +281,8 @@ mod tests {
                 timestamp: Utc::now(),
             },
             metadata: HashMap::new(),
+            emotional: None,
+            intention: None,
         }
     }
 

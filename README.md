@@ -75,8 +75,23 @@ Cognitive Memory Database (CMD) is a revolutionary approach to AGI memory that c
 - **Emotional operations**: Search by emotional valence, PAD similarity, and emotion updates
 - **Prospective memory**: Manage goals/intentions with trigger conditions and completion tracking
 - **Statistics tracking**: Real-time metrics for operations, performance, and emotional states
+- **Async-first design**: tokio::sync::RwLock for Send-safe futures in async contexts
 - **Configurable**: Builder pattern for fine-grained control
 - **Tests**: 21/21 passing ✅
+
+#### REST API (`cmd-api`) - v0.1.0
+- **Full HTTP interface**: 20+ endpoints for all memory operations
+- **Axum 0.8**: Modern async web framework with excellent performance
+- **Type-safe DTOs**: Serde-based request/response serialization
+- **Error handling**: Structured error responses with proper HTTP status codes
+- **CORS support**: Configurable cross-origin resource sharing
+- **Endpoints**:
+  - Memory operations: add, retrieve, delete, search (text and temporal)
+  - Emotional operations: search by valence/similarity, update emotions, get stats
+  - Prospective memory: manage intentions, get active/triggerable goals, complete/cancel
+  - System operations: health check, statistics, forgetting process
+- **Production ready**: Send-safe async handlers, proper state management
+- **Tests**: Compiles successfully, ready for integration tests ✅
 
 ### 🚧 In Development
 
@@ -87,10 +102,10 @@ Cognitive Memory Database (CMD) is a revolutionary approach to AGI memory that c
 
 ### 📝 Planned
 
-- REST API server (`cmd-api`)
+- REST API server binary with CLI
 - Python SDK via PyO3
-- Memory consolidation engine
-- Comprehensive benchmarks
+- Comprehensive end-to-end benchmarks
+- Cloud deployment guide
 
 ## Architecture
 
@@ -128,8 +143,11 @@ cargo build --package cmd-core --package cmd-resolver
 # Build HDC and search modules (Rust stable or nightly for SIMD)
 cargo build --package cmd-hdc --package cmd-search
 
-# Run tests
-cargo test --package cmd-core --package cmd-resolver --package cmd-hdc --package cmd-search
+# Build REST API
+cargo build --package cmd-api
+
+# Run tests (94 tests total)
+cargo test --workspace
 
 # Run benchmarks (requires nightly for best performance)
 rustup toolchain install nightly
@@ -238,6 +256,92 @@ let triggerable = manager.get_triggerable_intentions().await?;
 
 // Complete an intention
 manager.complete_intention(&goal_id).await?;
+```
+
+## REST API
+
+The REST API provides HTTP access to all cognitive memory operations:
+
+```rust
+use cmd_api::create_router;
+
+#[tokio::main]
+async fn main() {
+    // Create the API router with all endpoints
+    let app = create_router();
+
+    // Start the server
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")
+        .await
+        .unwrap();
+
+    println!("REST API listening on http://0.0.0.0:3000");
+    axum::serve(listener, app).await.unwrap();
+}
+```
+
+### API Endpoints
+
+**Memory Operations:**
+- `POST /memories` - Add a new memory
+- `GET /memories/:id` - Retrieve a memory by ID
+- `DELETE /memories/:id` - Delete a memory
+- `POST /memories/search` - Search memories by text query
+- `POST /memories/search/temporal` - Search with temporal filters
+
+**Emotional Operations:**
+- `POST /emotions/search` - Search by emotional valence
+- `POST /emotions/similarity` - Search by PAD similarity
+- `PUT /emotions/update/:id` - Update memory emotion
+- `GET /emotions/stats` - Get emotional statistics
+
+**Prospective Memory (Intentions):**
+- `POST /intentions` - Create a new intention
+- `GET /intentions/active` - Get active intentions
+- `GET /intentions/triggerable` - Get triggerable intentions
+- `POST /intentions/:id/complete` - Complete an intention
+- `POST /intentions/:id/cancel` - Cancel an intention
+
+**System Operations:**
+- `GET /health` - Health check
+- `GET /system/stats` - Get system statistics
+- `POST /system/forget` - Run forgetting process
+
+### Example API Usage
+
+```bash
+# Health check
+curl http://localhost:3000/health
+
+# Add a memory with emotion
+curl -X POST http://localhost:3000/memories \
+  -H "Content-Type: application/json" \
+  -d '{
+    "text": "User is excited about the project",
+    "confidence": 0.9,
+    "emotion": {
+      "pleasure": 0.7,
+      "arousal": 0.6,
+      "dominance": 0.5
+    }
+  }'
+
+# Search memories
+curl -X POST http://localhost:3000/memories/search \
+  -H "Content-Type: application/json" \
+  -d '{"query": "user preferences", "k": 10}'
+
+# Get emotional statistics
+curl http://localhost:3000/emotions/stats
+
+# Create an intention
+curl -X POST http://localhost:3000/intentions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "goal": "Implement cognitive architecture",
+    "priority": 0.9,
+    "trigger": {"Immediate": null}
+  }'
 ```
 
 ## Python SDK (Coming Soon)
@@ -352,10 +456,12 @@ This project builds upon research in:
 - [x] Emotional memory (PAD model)
 - [x] Prospective memory (goals/intentions)
 - [x] Emotional search and statistics
+- [x] REST API implementation (Axum 0.8)
+- [x] Async-safe lock implementation (tokio::sync::RwLock)
+- [ ] REST API server binary with CLI
 - [ ] Vector storage integration (LanceDB) - optional feature
 - [ ] Graph database integration (KuzuDB) - optional feature
 - [ ] Background consolidation scheduler
-- [ ] REST API server
 - [ ] Python SDK
 - [ ] End-to-end benchmarks
 - [ ] Cloud deployment guide
