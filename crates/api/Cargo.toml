@@ -38,8 +38,15 @@ anyhow = { workspace = true }
 chrono = "0.4"
 uuid = { version = "1.18", features = ["v7"] }
 
+# CLI
+clap = { version = "4.5", features = ["derive", "env"] }
+
 [features]
 python = ["pyo3"]
+
+[[bin]]
+name = "cmd-server"
+path = "src/bin/server.rs"
 
 [dev-dependencies]
 hyper = "1.5"

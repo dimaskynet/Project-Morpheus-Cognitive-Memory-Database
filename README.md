@@ -82,6 +82,7 @@ Cognitive Memory Database (CMD) is a revolutionary approach to AGI memory that c
 #### REST API (`cmd-api`) - v0.1.0
 - **Full HTTP interface**: 20+ endpoints for all memory operations
 - **Axum 0.8**: Modern async web framework with excellent performance
+- **Production server binary**: `cmd-server` with CLI (host, port, log level, JSON logs)
 - **Type-safe DTOs**: Serde-based request/response serialization
 - **Error handling**: Structured error responses with proper HTTP status codes
 - **CORS support**: Configurable cross-origin resource sharing
@@ -91,7 +92,7 @@ Cognitive Memory Database (CMD) is a revolutionary approach to AGI memory that c
   - Prospective memory: manage intentions, get active/triggerable goals, complete/cancel
   - System operations: health check, statistics, forgetting process
 - **Production ready**: Send-safe async handlers, proper state management
-- **Tests**: Compiles successfully, ready for integration tests ✅
+- **Tests**: 13 integration tests passing ✅
 
 ### 🚧 In Development
 
@@ -260,7 +261,42 @@ manager.complete_intention(&goal_id).await?;
 
 ## REST API
 
-The REST API provides HTTP access to all cognitive memory operations:
+### Running the Server
+
+The easiest way to start the server is using the `cmd-server` binary:
+
+```bash
+# Build the server
+cargo build --package cmd-api --bin cmd-server --release
+
+# Run with default settings (0.0.0.0:3000)
+./target/release/cmd-server
+
+# Run on custom port
+./target/release/cmd-server -p 8080
+
+# Run with custom host and JSON logs
+./target/release/cmd-server -H 127.0.0.1 -p 8080 --json-logs
+
+# Set log level to debug
+./target/release/cmd-server -l debug
+
+# Use environment variables
+CMD_HOST=127.0.0.1 CMD_PORT=8080 RUST_LOG=debug ./target/release/cmd-server
+
+# View all options
+./target/release/cmd-server --help
+```
+
+**CLI Options:**
+- `-H, --host <HOST>` - Host address (default: 0.0.0.0, env: CMD_HOST)
+- `-p, --port <PORT>` - Port number (default: 3000, env: CMD_PORT)
+- `-l, --log-level <LEVEL>` - Log level: trace, debug, info, warn, error (default: info, env: RUST_LOG)
+- `--json-logs` - Output logs in JSON format for production (env: CMD_JSON_LOGS)
+
+### Programmatic Usage
+
+You can also embed the API in your own Rust application:
 
 ```rust
 use cmd_api::create_router;
@@ -387,8 +423,15 @@ results = await cmd.retrieve(
 ## Testing
 
 ```bash
-# Run all tests
-cargo test --package cmd-core --package cmd-resolver --package cmd-hdc --package cmd-search --package cmd-storage --package cmd-manager
+# Run all tests (unit + integration)
+cargo test --workspace
+
+# Run unit tests only
+cargo test --package cmd-core --package cmd-resolver --package cmd-hdc \
+           --package cmd-search --package cmd-storage --package cmd-manager
+
+# Run REST API integration tests
+cargo test --package cmd-api
 
 # Run HDC benchmarks (requires nightly)
 cargo +nightly bench --package cmd-hdc
@@ -411,7 +454,8 @@ cargo build --package cmd-storage --features full  # Requires protoc and kuzu
 - **cmd-search**: 5 tests covering HDC-based indexing and search modes
 - **cmd-storage**: 8 tests covering episodic storage, semantic graphs, and vector search
 - **cmd-manager**: 21 tests covering lifecycle, search, consolidation, emotional operations, and intentions
-- **Total**: 94 tests, 100% passing ✅
+- **cmd-api**: 13 integration tests covering HTTP endpoints, CRUD operations, and error handling
+- **Total**: 107 tests, 100% passing (94 unit + 13 integration) ✅
 
 ## Documentation
 
@@ -458,7 +502,8 @@ This project builds upon research in:
 - [x] Emotional search and statistics
 - [x] REST API implementation (Axum 0.8)
 - [x] Async-safe lock implementation (tokio::sync::RwLock)
-- [ ] REST API server binary with CLI
+- [x] REST API server binary with CLI
+- [x] REST API integration tests (13 tests)
 - [ ] Vector storage integration (LanceDB) - optional feature
 - [ ] Graph database integration (KuzuDB) - optional feature
 - [ ] Background consolidation scheduler
