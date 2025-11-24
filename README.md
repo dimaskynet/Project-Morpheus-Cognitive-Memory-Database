@@ -92,7 +92,7 @@ Cognitive Memory Database (CMD) is a revolutionary approach to AGI memory that c
   - Prospective memory: manage intentions, get active/triggerable goals, complete/cancel
   - System operations: health check, statistics, forgetting process
 - **Production ready**: Send-safe async handlers, proper state management
-- **Tests**: 13 integration tests passing ✅
+- **Tests**: 18 integration tests passing ✅
 
 ### 🚧 In Development
 
@@ -454,8 +454,8 @@ cargo build --package cmd-storage --features full  # Requires protoc and kuzu
 - **cmd-search**: 5 tests covering HDC-based indexing and search modes
 - **cmd-storage**: 8 tests covering episodic storage, semantic graphs, and vector search
 - **cmd-manager**: 21 tests covering lifecycle, search, consolidation, emotional operations, and intentions
-- **cmd-api**: 13 integration tests covering HTTP endpoints, CRUD operations, and error handling
-- **Total**: 107 tests, 100% passing (94 unit + 13 integration) ✅
+- **cmd-api**: 18 integration tests covering HTTP endpoints, CRUD operations, and error handling
+- **Total**: 112 tests, 100% passing (94 unit + 18 integration) ✅
 
 ## Documentation
 
@@ -503,7 +503,7 @@ This project builds upon research in:
 - [x] REST API implementation (Axum 0.8)
 - [x] Async-safe lock implementation (tokio::sync::RwLock)
 - [x] REST API server binary with CLI
-- [x] REST API integration tests (13 tests)
+- [x] REST API integration tests (18/18 passing)
 - [ ] Vector storage integration (LanceDB) - optional feature
 - [ ] Graph database integration (KuzuDB) - optional feature
 - [ ] Background consolidation scheduler
